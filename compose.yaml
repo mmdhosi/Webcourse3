@@ -1,0 +1,34 @@
+services:
+  legacy:
+    image: ghcr.io/mccutchen/go-httpbin:2.19.0
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8081"
+    expose:
+      - "8081"
+    networks:
+      - backend
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  proxy:
+    build: .
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env first}
+      JWT_ISSUER: http-hands-on
+      JWT_AUDIENCE: legacy-service
+      UPSTREAM_URL: http://legacy:8081
+    ports:
+      - "80:8000"
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - legacy
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+networks:
+  frontend: {}
+  backend:
+    internal: true
